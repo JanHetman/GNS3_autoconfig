@@ -51,12 +51,61 @@ def get_all_links_info(project_id):
         links_dict[single_link["link_id"]] = {"node_1_id": single_link["nodes"][0]["node_id"],
                                               "node_1_port": single_link["nodes"][0]["label"]["text"],
                                               "node_2_id": single_link["nodes"][1]["node_id"],
-                                              "node_2_port": single_link["nodes"][0]["label"]["text"]}
+                                              "node_2_port": single_link["nodes"][1]["label"]["text"]}
 
     return links_dict
+
+
+def create_connection_table(nodes, links):
+
+    connection_table = []
+    for key, value in nodes.items():
+        # robimy tabele tylko dla routerow - jezeli mamy switcha to dla niego nie generujemy tabeli
+        if "Switch" in value["name"]:
+            continue
+
+        host = {}
+        host["name"] = value["name"]
+        ports = []
+
+        for key2, value2 in links.items():
+
+            if value2["node_1_id"] == value["id"]:
+                port = {}
+                neighbors = []
+                first_neighbor = {}
+                port["number"] = value2["node_1_port"]
+                first_neighbor["id"] = value2["node_2_id"]
+                first_neighbor["port"] = value2["node_2_port"]
+                first_neighbor["name"] = nodes[value2["node_2_id"]]["name"]
+                neighbors.append(first_neighbor)
+                port["neighbors"] = neighbors
+
+            elif value2["node_2_id"] == value["id"]:
+                port = {}
+                neighbors = []
+                first_neighbor = {}
+                port["number"] = value2["node_2_port"]
+                first_neighbor["id"] = value2["node_1_id"]
+                first_neighbor["port"] = value2["node_1_port"]
+                first_neighbor["name"] = nodes[value2["node_1_id"]]["name"]
+                neighbors.append(first_neighbor)
+                port["neighbors"] = neighbors
+
+            else:
+                continue
+
+            ports.append(port)
+
+        host["ports"] = ports
+        connection_table.append(host)
+
+    return connection_table
 
 
 id = get_project_id_based_on_name("test")
 nodes = get_all_nodes_info(id)
 pprint(nodes)
-pprint(get_all_links_info(id))
+links = (get_all_links_info(id))
+pprint(links)
+pprint(create_connection_table(nodes, links))
