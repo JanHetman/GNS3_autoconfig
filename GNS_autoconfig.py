@@ -56,56 +56,129 @@ def get_all_links_info(project_id):
     return links_dict
 
 
-def create_connection_table(nodes, links):
+# def create_connection_table(nodes, links):
+#
+#     #connection_table = []
+#     host = {}
+#     for key, value in nodes.items():
+#         # robimy tabele tylko dla routerow - jezeli mamy switcha to dla niego nie generujemy tabeli
+#         # if "Switch" in value["name"]:
+#         #     continue
+#
+#         #host = {}
+#         #host["name"] = value["name"]
+#         ports = []
+#
+#         for key2, value2 in links.items():
+#
+#             if value2["node_1_id"] == value["id"]:
+#                 port = {}
+#                 neighbors = []
+#                 first_neighbor = {}
+#                 port["number"] = value2["node_1_port"]
+#                 first_neighbor["id"] = value2["node_2_id"]
+#                 first_neighbor["port"] = value2["node_2_port"]
+#                 first_neighbor["name"] = nodes[value2["node_2_id"]]["name"]
+#                 neighbors.append(first_neighbor)
+#                 port["neighbors"] = neighbors
+#
+#             elif value2["node_2_id"] == value["id"]:
+#                 port = {}
+#                 neighbors = []
+#                 first_neighbor = {}
+#                 port["number"] = value2["node_2_port"]
+#                 first_neighbor["id"] = value2["node_1_id"]
+#                 first_neighbor["port"] = value2["node_1_port"]
+#                 first_neighbor["name"] = nodes[value2["node_1_id"]]["name"]
+#                 neighbors.append(first_neighbor)
+#                 port["neighbors"] = neighbors
+#
+#             else:
+#                 continue
+#
+#             ports.append(port)
+#
+#         #host["ports"] = ports
+#         #connection_table.append(host)
+#         host[value["name"]] = ports
+#
+#     multi_access_connection_table = copy.copy(host)
+#
+#     # for i in range(len(host)):
+#     #     for j in range(len(connection_table[i]["ports"])):
+#     #         for k in range(len(connection_table[i]["ports"][j]['neighbors'])):
+#     #             if "Switch" in connection_table[i]["ports"][j]['neighbors'][k]["name"]:
+#     #                 sw_name = connection_table[i]["ports"][j]['neighbors'][k]["name"]
+#     #                 del multi_access_connection_table[i]["ports"][j]['neighbors'][k]
+#     pprint(host)
+#     for name, ports in host.items():
+#         for port in range(len(ports)):
+#             for o in range(len(ports[port]['neighbors'])):
+#                 print(ports[port]['neighbors'][o]["name"])
+#                 if "Switch" in ports[port]['neighbors'][o]["name"]:
+#                     sw_name = ports[port]['neighbors'][o]["name"]
+#                     del multi_access_connection_table[name][port]["neighbors"][o]
+#                     for abc in host[sw_name]:
+#                         for element in abc["neighbors"]:
+#                             print(element)
+#                             multi_access_connection_table[name][port]["neighbors"].append(element)
+#
+#
+#
+#     return host
 
-    connection_table = []
-    for key, value in nodes.items():
-        # robimy tabele tylko dla routerow - jezeli mamy switcha to dla niego nie generujemy tabeli
-        if "Switch" in value["name"]:
-            continue
+def modify_links(links, device):
+    tab = []
+    for key, value in links.items():
+        id_1, id_2 = value["node_1_id"], value["node_2_id"]
+        name_1, name_2 = device[id_1]["name"], device[id_2]["name"]
+        port_1, port_2 = value["node_1_port"], value["node_2_port"]
+        node_1 = name_1 + ":" + port_1 if "Switch" not in name_1 else name_1
+        node_2 = name_2 + ":" + port_2 if "Switch" not in name_2 else name_2
+        tablica = [node_1, node_2]
+        tab.append(tablica)
 
-        host = {}
-        host["name"] = value["name"]
-        ports = []
+    lista_sw = []
+    print(tab)
 
-        for key2, value2 in links.items():
+    lista_sw = []
+    for line in tab:
+        for line2 in line:
+            if "Switch" in line2:
+                lista_sw.append(line2)
+    lista_sw = list(set(lista_sw))
 
-            if value2["node_1_id"] == value["id"]:
-                port = {}
-                neighbors = []
-                first_neighbor = {}
-                port["number"] = value2["node_1_port"]
-                first_neighbor["id"] = value2["node_2_id"]
-                first_neighbor["port"] = value2["node_2_port"]
-                first_neighbor["name"] = nodes[value2["node_2_id"]]["name"]
-                neighbors.append(first_neighbor)
-                port["neighbors"] = neighbors
+    print(lista_sw)
+    #print(tab)
 
-            elif value2["node_2_id"] == value["id"]:
-                port = {}
-                neighbors = []
-                first_neighbor = {}
-                port["number"] = value2["node_2_port"]
-                first_neighbor["id"] = value2["node_1_id"]
-                first_neighbor["port"] = value2["node_1_port"]
-                first_neighbor["name"] = nodes[value2["node_1_id"]]["name"]
-                neighbors.append(first_neighbor)
-                port["neighbors"] = neighbors
+    for line in lista_sw:
+        f_table = []
+        print(line)
+        f_table_link = []
 
-            else:
-                continue
+        for line_links in range(len(tab)):
+            if len(list(set(tab[line_links]).intersection([line]))) == 0:
+                # print(tab[line_links])
+                f_table_r = []
+                f_table_r = tab[line_links]
+                f_table.append(f_table_r)
 
-            ports.append(port)
+            elif line in tab[line_links]:
+                f_table_link = f_table_link + tab[line_links]
+                #print(f_table_link)
+                del f_table_link[f_table_link.index(line)]
 
-        host["ports"] = ports
-        connection_table.append(host)
 
-    return connection_table
+        f_table.append(f_table_link)
+        tab = f_table
+        print(tab)
 
+    #print(tab)
+    return tab
 
 id = get_project_id_based_on_name("test")
 nodes = get_all_nodes_info(id)
 pprint(nodes)
 links = (get_all_links_info(id))
 pprint(links)
-pprint(create_connection_table(nodes, links))
+modify_links(links, nodes)
