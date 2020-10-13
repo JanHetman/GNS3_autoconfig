@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import requests
+import threading
 from pprint import pprint
 from netaddr import IPNetwork
 from jinja2 import Environment, FileSystemLoader
@@ -35,7 +36,6 @@ def get_all_nodes_info(project_id):
 
     for single_node in response.json():
         devices_dict[single_node["node_id"]] = {"name": single_node["name"],
-                                                "id": single_node["node_id"],
                                                 "console_ip": single_node["console_host"],
                                                 "console_port": single_node["console"],
                                                 "device_type": single_node["node_type"]}
@@ -189,7 +189,7 @@ def modify_links(links, device):
             nazwa = line2.split(":")[0]
             interface = line2.split(":")[1]
             ostati_oktet = nazwa[1:]
-            adresacja = str(IPNetwork(lista_sieci[j])[ostati_oktet]) + " " + str(IPNetwork(lista_sieci[j]).netmask)
+            adresacja = str(IPNetwork(lista_sieci[j])[ostati_oktet])# + " " + str(IPNetwork(lista_sieci[j]).netmask)
             print(nazwa)
             print(interface)
             print(adresacja)
@@ -197,11 +197,12 @@ def modify_links(links, device):
             if nazwa not in slownik_do_agregacji_interfacow.keys():
                 slownik_do_agregacji_interfacow[nazwa] = []
 
+            slownik_interfacy_zwykle = {interface: adresacja}
             slownik_do_agregacji_interfacow[nazwa].append({interface: adresacja})
 
     for router, interfacy in slownik_do_agregacji_interfacow.items():
         numer_routera = router[1:]
-        address_loopbacka = str(numer_routera) + "." + str(numer_routera) + "." + str(numer_routera) + "." + str(numer_routera)
+        address_loopbacka = str(numer_routera) + "." + str(numer_routera) + "." + str(numer_routera) + "." + str(numer_routera)# + " 255.255.255.255"
         slownik_do_agregacji_interfacow[router].append({"lo0": address_loopbacka})
 
     #print(slownik_do_agregacji_interfacow)
@@ -214,12 +215,52 @@ def modify_links(links, device):
 def generete_config_from_template(dane):
     RENDER = Environment(loader=FileSystemLoader('.'))  # tu podajemy sciezke do templatow '.'
     template = RENDER.get_template('config_temp.j2')
+    konfiguracja_do_dodania = {}
     for key, value in dane.items():
-        print(key)
+        #print(key)
         generacja_templatu_dla_pojedynczego_urzadzenia = template.render(data = value)
-        print(generacja_templatu_dla_pojedynczego_urzadzenia)
+        #print(generacja_templatu_dla_pojedynczego_urzadzenia)
+        konfiguracja_do_dodania[key] = generacja_templatu_dla_pojedynczego_urzadzenia
 
-    pass
+    return konfiguracja_do_dodania
+
+
+
+def start_all_nodes(nodes, project_id):
+
+    for node_id in nodes.keys():
+        url = "http://" + gns3_server_address + ":" + gns3_server_port + "/v2/projects/" + project_id + "/nodes/" + node_id + "/start"
+        response = requests.request("POST", url)
+        print(response)
+
+
+
+def device_config(ip, port, config_for_router):
+
+    device = {
+        'device_type': 'cisco_ios_telnet',
+        'ip': ip,
+        'port': port,
+        'timeout': 120
+    }
+
+    net_connect = ConnectHandler(**device)
+    print(net_connect.find_prompt())
+    net_connect.disconnect()
+
+
+def create_threads_for_device_config(nodes, config):
+    threads = []
+
+    for router, info in nodes.items():
+        ip_address = info['console_ip']
+        port = info["console_port"]
+        th = threading.Thread(target=device_config, args=(ip_address, port, config[router]))
+        th.start()
+        threads.append(th)
+
+    for th in threads:
+        th.join()
 
 
 id = get_project_id_based_on_name("test")
@@ -229,4 +270,7 @@ links = (get_all_links_info(id))
 pprint(links)
 tab = modify_links(links, nodes)
 pprint(tab)
-generete_config_from_template(tab)
+konfig = generete_config_from_template(tab)
+pprint(konfig)
+start_all_nodes(nodes, id)
+create_threads_for_device_config(nodes, konfig)
