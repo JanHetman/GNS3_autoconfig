@@ -2,11 +2,13 @@
 
 import requests
 from pprint import pprint
+from netaddr import IPNetwork
 from netmiko import ConnectHandler
 
 # GLOBAL VARIABLE:
 gns3_server_address = "localhost"
 gns3_server_port = "3080"
+addressing = "192.168.0.0/16"
 # GLOBAL VARIABLE END
 
 def get_project_id_based_on_name(project_name):
@@ -173,8 +175,40 @@ def modify_links(links, device):
         tab = f_table
         print(tab)
 
+    lista_sieci = []
+    siec = IPNetwork(addressing)
+    siec_subnets = list(siec.subnet(24))
+    for i in range(len(tab)):
+        lista_sieci.append(str(siec_subnets[i]))
+
+    print(lista_sieci)
+    slownik_do_agregacji_interfacow = {}
+    for j in range(len(tab)):
+        for line2 in tab[j]:
+            nazwa = line2.split(":")[0]
+            interface = line2.split(":")[1]
+            ostati_oktet = nazwa[1:]
+            adresacja = str(IPNetwork(lista_sieci[j])[ostati_oktet]) + " " + str(IPNetwork(lista_sieci[j]).netmask)
+            print(nazwa)
+            print(interface)
+            print(adresacja)
+
+            if nazwa not in slownik_do_agregacji_interfacow.keys():
+                slownik_do_agregacji_interfacow[nazwa] = []
+                slownik_do_agregacji_interfacow[nazwa].append({interface: adresacja})
+
+            else:
+                slownik_do_agregacji_interfacow[nazwa].append({interface: adresacja})
+
+    print(slownik_do_agregacji_interfacow)
+
+
     #print(tab)
-    return tab
+    return slownik_do_agregacji_interfacow
+
+
+def generete_config_from_template():
+    pass
 
 id = get_project_id_based_on_name("test")
 nodes = get_all_nodes_info(id)
