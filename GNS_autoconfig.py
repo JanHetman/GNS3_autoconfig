@@ -37,6 +37,7 @@ def get_all_nodes_info(project_id):
     for single_node in response.json():
         devices_dict[single_node["node_id"]] = {"name": single_node["name"],
                                                 "console_ip": single_node["console_host"],
+                                                "id": single_node["node_id"],
                                                 "console_port": single_node["console"],
                                                 "device_type": single_node["node_type"]}
 
@@ -58,77 +59,6 @@ def get_all_links_info(project_id):
 
     return links_dict
 
-
-# def create_connection_table(nodes, links):
-#
-#     #connection_table = []
-#     host = {}
-#     for key, value in nodes.items():
-#         # robimy tabele tylko dla routerow - jezeli mamy switcha to dla niego nie generujemy tabeli
-#         # if "Switch" in value["name"]:
-#         #     continue
-#
-#         #host = {}
-#         #host["name"] = value["name"]
-#         ports = []
-#
-#         for key2, value2 in links.items():
-#
-#             if value2["node_1_id"] == value["id"]:
-#                 port = {}
-#                 neighbors = []
-#                 first_neighbor = {}
-#                 port["number"] = value2["node_1_port"]
-#                 first_neighbor["id"] = value2["node_2_id"]
-#                 first_neighbor["port"] = value2["node_2_port"]
-#                 first_neighbor["name"] = nodes[value2["node_2_id"]]["name"]
-#                 neighbors.append(first_neighbor)
-#                 port["neighbors"] = neighbors
-#
-#             elif value2["node_2_id"] == value["id"]:
-#                 port = {}
-#                 neighbors = []
-#                 first_neighbor = {}
-#                 port["number"] = value2["node_2_port"]
-#                 first_neighbor["id"] = value2["node_1_id"]
-#                 first_neighbor["port"] = value2["node_1_port"]
-#                 first_neighbor["name"] = nodes[value2["node_1_id"]]["name"]
-#                 neighbors.append(first_neighbor)
-#                 port["neighbors"] = neighbors
-#
-#             else:
-#                 continue
-#
-#             ports.append(port)
-#
-#         #host["ports"] = ports
-#         #connection_table.append(host)
-#         host[value["name"]] = ports
-#
-#     multi_access_connection_table = copy.copy(host)
-#
-#     # for i in range(len(host)):
-#     #     for j in range(len(connection_table[i]["ports"])):
-#     #         for k in range(len(connection_table[i]["ports"][j]['neighbors'])):
-#     #             if "Switch" in connection_table[i]["ports"][j]['neighbors'][k]["name"]:
-#     #                 sw_name = connection_table[i]["ports"][j]['neighbors'][k]["name"]
-#     #                 del multi_access_connection_table[i]["ports"][j]['neighbors'][k]
-#     pprint(host)
-#     for name, ports in host.items():
-#         for port in range(len(ports)):
-#             for o in range(len(ports[port]['neighbors'])):
-#                 print(ports[port]['neighbors'][o]["name"])
-#                 if "Switch" in ports[port]['neighbors'][o]["name"]:
-#                     sw_name = ports[port]['neighbors'][o]["name"]
-#                     del multi_access_connection_table[name][port]["neighbors"][o]
-#                     for abc in host[sw_name]:
-#                         for element in abc["neighbors"]:
-#                             print(element)
-#                             multi_access_connection_table[name][port]["neighbors"].append(element)
-#
-#
-#
-#     return host
 
 def modify_links(links, device):
     tab = []
@@ -235,32 +165,29 @@ def start_all_nodes(nodes, project_id):
 
 
 
-def device_config(ip, port, config_for_router):
+def device_config(nodes, config_for_router):
 
-    device = {
-        'device_type': 'cisco_ios_telnet',
-        'ip': ip,
-        'port': port,
-        'timeout': 120
-    }
+    for info in nodes.values():
 
-    net_connect = ConnectHandler(**device)
-    print(net_connect.find_prompt())
-    net_connect.disconnect()
+        if "Switch" not in info["name"]:
 
+            device = {
+                'device_type': 'cisco_ios_telnet',
+                'ip': info["console_ip"],
+                'port': info["console_port"],
+            }
 
-def create_threads_for_device_config(nodes, config):
-    threads = []
+            while True:
+                try:
+                    net_connect = ConnectHandler(**device)
+                    net_connect.send_command("\n\n\n")
+                    print(net_connect.find_prompt())
+                    break
+                except:
+                    pass
 
-    for router, info in nodes.items():
-        ip_address = info['console_ip']
-        port = info["console_port"]
-        th = threading.Thread(target=device_config, args=(ip_address, port, config[router]))
-        th.start()
-        threads.append(th)
+            net_connect.disconnect()
 
-    for th in threads:
-        th.join()
 
 
 id = get_project_id_based_on_name("test")
@@ -273,4 +200,4 @@ pprint(tab)
 konfig = generete_config_from_template(tab)
 pprint(konfig)
 start_all_nodes(nodes, id)
-create_threads_for_device_config(nodes, konfig)
+device_config(nodes, konfig)
