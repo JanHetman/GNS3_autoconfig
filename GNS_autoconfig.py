@@ -196,10 +196,13 @@ def modify_links(links, device):
 
             if nazwa not in slownik_do_agregacji_interfacow.keys():
                 slownik_do_agregacji_interfacow[nazwa] = []
-                slownik_do_agregacji_interfacow[nazwa].append({interface: adresacja})
 
-            else:
-                slownik_do_agregacji_interfacow[nazwa].append({interface: adresacja})
+            slownik_do_agregacji_interfacow[nazwa].append({interface: adresacja})
+
+    for router, interfacy in slownik_do_agregacji_interfacow.items():
+        numer_routera = router[1:]
+        address_loopbacka = str(numer_routera) + "." + str(numer_routera) + "." + str(numer_routera) + "." + str(numer_routera)
+        slownik_do_agregacji_interfacow[router].append({"lo0": address_loopbacka})
 
     #print(slownik_do_agregacji_interfacow)
 
