@@ -164,29 +164,49 @@ def start_all_nodes(nodes, project_id):
         print(response)
 
 
+def create_threads_for_device_config(nodes, config_for_router):
 
-def device_config(nodes, config_for_router):
+    threads = []
 
     for info in nodes.values():
+        if "Switch" not in info["name"] and info["name"] in config_for_router.keys():
+            th = threading.Thread(target=device_config, args=(info, config_for_router[info["name"]]))
+            th.start()
+            threads.append(th)
+        else:
+            continue
 
-        if "Switch" not in info["name"]:
+    for th in threads:
+        th.join()
 
-            device = {
-                'device_type': 'cisco_ios_telnet',
-                'ip': info["console_ip"],
-                'port': info["console_port"],
-            }
 
-            while True:
-                try:
-                    net_connect = ConnectHandler(**device)
-                    net_connect.send_command("\n\n\n")
-                    print(net_connect.find_prompt())
-                    break
-                except:
-                    pass
+def device_config(info, config_for_router):
 
-            net_connect.disconnect()
+    device = {
+        'device_type': 'cisco_ios_telnet',
+        'ip': info["console_ip"],
+        'port': info["console_port"],
+    }
+
+    while True:
+        try:
+            net_connect = ConnectHandler(**device)
+            break
+        except:
+            pass
+
+    net_connect.send_command("\n\n\n\n")
+
+
+    #print(config_for_router.splitlines())
+    print("Trwa konfiguracja " + info['name'])
+    for line_of_config in config_for_router.splitlines():
+        #print(line_of_config)
+        net_connect.send_command_timing(command_string=line_of_config,strip_prompt=False,strip_command=False)
+        #net_connect.send_command(command_string=line_of_config, strip_prompt=False, strip_command=False)
+        #net_connect.send_command(line_of_config)
+
+    net_connect.disconnect()
 
 
 
@@ -200,4 +220,4 @@ pprint(tab)
 konfig = generete_config_from_template(tab)
 pprint(konfig)
 start_all_nodes(nodes, id)
-device_config(nodes, konfig)
+create_threads_for_device_config(nodes, konfig)
