@@ -1,7 +1,6 @@
 configure terminal
 {%- for interface_item in data -%}
 {% for key, value in interface_item.items() %}
-!
 {% if key != "lo0" -%}
 interface {{ key }}
 ip address {{ value }} 255.255.255.0
@@ -12,13 +11,10 @@ ip address {{ value }} 255.255.255.255
 {% endif %}
 {%- endfor -%}
 {%- endfor -%}
-!
 router ospf 1
 {%- for interface_item in data -%}
 {% for key, value in interface_item.items() %}
 network {{ value }} 0.0.0.0 area 0
 {%- endfor -%}
 {%- endfor %}
-!
 end
-!

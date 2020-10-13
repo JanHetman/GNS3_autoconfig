@@ -2,6 +2,7 @@
 
 import requests
 import threading
+import time
 from pprint import pprint
 from netaddr import IPNetwork
 from jinja2 import Environment, FileSystemLoader
@@ -126,14 +127,11 @@ def modify_links(links, device):
 
             if nazwa not in slownik_do_agregacji_interfacow.keys():
                 slownik_do_agregacji_interfacow[nazwa] = []
+                address_loopbacka = str(ostati_oktet) + "." + str(ostati_oktet) + "." + str(ostati_oktet) + "." + str(ostati_oktet)  # + " 255.255.255.255"
+                slownik_do_agregacji_interfacow[nazwa].append({"lo0": address_loopbacka})
 
-            slownik_interfacy_zwykle = {interface: adresacja}
             slownik_do_agregacji_interfacow[nazwa].append({interface: adresacja})
 
-    for router, interfacy in slownik_do_agregacji_interfacow.items():
-        numer_routera = router[1:]
-        address_loopbacka = str(numer_routera) + "." + str(numer_routera) + "." + str(numer_routera) + "." + str(numer_routera)# + " 255.255.255.255"
-        slownik_do_agregacji_interfacow[router].append({"lo0": address_loopbacka})
 
     #print(slownik_do_agregacji_interfacow)
 
@@ -171,6 +169,7 @@ def create_threads_for_device_config(nodes, config_for_router):
     for info in nodes.values():
         if "Switch" not in info["name"] and info["name"] in config_for_router.keys():
             th = threading.Thread(target=device_config, args=(info, config_for_router[info["name"]]))
+            time.sleep(0.1)
             th.start()
             threads.append(th)
         else:
@@ -205,7 +204,7 @@ def device_config(info, config_for_router):
         #net_connect.send_command(command_string=line_of_config, strip_prompt=False, strip_command=False)
         net_connect.send_command(line_of_config, expect_string=r'#')
     print("Konfiguracja " + info['name'] + " zakonczona")
-    net_connect.disconnect()
+    #net_connect.disconnect()
 
 
 
