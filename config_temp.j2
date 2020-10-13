@@ -10,7 +10,7 @@ interface {{ key }}
 ip address {{ value }} 255.255.255.255
 {% endif %}
 {%- endfor -%}
-{%- endfor -%}
+{%- endfor %}
 router ospf 1
 {%- for interface_item in data -%}
 {% for key, value in interface_item.items() %}
