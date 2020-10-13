@@ -198,7 +198,7 @@ def device_config(info, config_for_router):
     net_connect.send_command("\n\n\n\n")
 
     #print(config_for_router.splitlines())
-    print("Trwa konfiguracja " + info['name'] + "\n")
+    print("Trwa konfiguracja " + info['name'])
     for line_of_config in config_for_router.splitlines():
         #print(line_of_config)
         #net_connect.send_command_timing(command_string=line_of_config,strip_prompt=False,strip_command=False)
