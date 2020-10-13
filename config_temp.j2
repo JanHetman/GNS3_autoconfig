@@ -1,13 +1,16 @@
 configure terminal
+no logging console
 {%- for interface_item in data -%}
 {% for key, value in interface_item.items() %}
 {% if key != "lo0" -%}
 interface {{ key }}
 ip address {{ value }} 255.255.255.0
 no shutdown
+exit
 {%- else -%}
 interface {{ key }}
 ip address {{ value }} 255.255.255.255
+exit
 {% endif %}
 {%- endfor -%}
 {%- endfor %}
@@ -17,4 +20,6 @@ router ospf 1
 network {{ value }} 0.0.0.0 area 0
 {%- endfor -%}
 {%- endfor %}
+exit
+logging console
 end
