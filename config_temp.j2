@@ -1,0 +1,8 @@
+configure terminal
+!
+{%- for interface_item in data %}
+{% for key, value in interface_item.items() %}
+interface {{ key }}
+ip address {{ value }}
+{%- endfor %}
+{%- endfor %}

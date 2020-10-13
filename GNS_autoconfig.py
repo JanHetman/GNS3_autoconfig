@@ -3,6 +3,7 @@
 import requests
 from pprint import pprint
 from netaddr import IPNetwork
+from jinja2 import Environment, FileSystemLoader
 from netmiko import ConnectHandler
 
 # GLOBAL VARIABLE:
@@ -200,19 +201,29 @@ def modify_links(links, device):
             else:
                 slownik_do_agregacji_interfacow[nazwa].append({interface: adresacja})
 
-    print(slownik_do_agregacji_interfacow)
+    #print(slownik_do_agregacji_interfacow)
 
 
     #print(tab)
     return slownik_do_agregacji_interfacow
 
 
-def generete_config_from_template():
+def generete_config_from_template(dane):
+    RENDER = Environment(loader=FileSystemLoader('.'))  # tu podajemy sciezke do templatow '.'
+    template = RENDER.get_template('config_temp.j2')
+    for key, value in dane.items():
+        print(key)
+        generacja_templatu_dla_pojedynczego_urzadzenia = template.render(data = value)
+        print(generacja_templatu_dla_pojedynczego_urzadzenia)
+
     pass
+
 
 id = get_project_id_based_on_name("test")
 nodes = get_all_nodes_info(id)
 pprint(nodes)
 links = (get_all_links_info(id))
 pprint(links)
-modify_links(links, nodes)
+tab = modify_links(links, nodes)
+pprint(tab)
+generete_config_from_template(tab)
