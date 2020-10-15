@@ -28,7 +28,6 @@ def get_project_id_based_on_name(project_name):
         return None
 
 
-
 def get_all_nodes_info(project_id):
 
     url = "http://" + gns3_server_address + ":" + gns3_server_port + "/v2/projects/" + project_id + "/nodes"
