@@ -3,6 +3,7 @@
 import requests
 import threading
 import time
+import sys
 from pprint import pprint
 from netaddr import IPNetwork
 from jinja2 import Environment, FileSystemLoader
@@ -11,13 +12,24 @@ from netmiko import ConnectHandler
 # GLOBAL VARIABLE:
 gns3_server_address = "localhost"
 gns3_server_port = "3080"
-addressing = "192.168.0.0/16"
+addressing = "10.15.128.0/30"
 # GLOBAL VARIABLE END
+
+def get_project_name():
+    project_name = input("Podaj nazwe projektu: ")
+    return project_name
 
 def get_project_id_based_on_name(project_name):
 
     url = "http://" + gns3_server_address + ":" + gns3_server_port + "/v2/projects"
-    response = requests.request("GET", url)
+
+    try:
+        response = requests.request("GET", url)
+
+    except requests.exceptions.ConnectionError:
+        print("Brak odpowiedzi od serwera GNS3.")
+        sys.exit()
+
 
     for single_project in response.json():
         if project_name == single_project["name"]:
@@ -25,7 +37,8 @@ def get_project_id_based_on_name(project_name):
         else:
             continue
     else:
-        return None
+        print("Nie ma takiego projektu")
+        sys.exit()
 
 
 
@@ -36,12 +49,16 @@ def get_all_nodes_info(project_id):
 
     devices_dict = {}
 
-    for single_node in response.json():
-        devices_dict[single_node["node_id"]] = {"name": single_node["name"],
-                                                "console_ip": single_node["console_host"],
-                                                "id": single_node["node_id"],
-                                                "console_port": single_node["console"],
-                                                "device_type": single_node["node_type"]}
+    try:
+        for single_node in response.json():
+            devices_dict[single_node["node_id"]] = {"name": single_node["name"],
+                                                    "console_ip": single_node["console_host"],
+                                                    "id": single_node["node_id"],
+                                                    "console_port": single_node["console"],
+                                                    "device_type": single_node["node_type"]}
+    except KeyError:
+        print("Projekt nie otwarty")
+        sys.exit()
 
     return devices_dict
 
@@ -60,6 +77,23 @@ def get_all_links_info(project_id):
                                               "node_2_port": single_link["nodes"][1]["label"]["text"]}
 
     return links_dict
+
+
+def sprawdz_nazwy_urzadzen(nodes):
+
+    list_of_nodes = []
+
+    for single_node in nodes.values():
+        list_of_nodes.append(single_node['name'])
+
+    b = [x for x in list_of_nodes if ((len(x) <= 4 and x[1:].isdigit() and int(x[1:]) > 0 and int(x[1:]) < 224) or "Switch" in x)]
+
+    if list_of_nodes == b:
+        print("Wymogi spelnione")
+
+    else:
+        print("Wymogi dla tej wersji projektu nie spelnione. Zamykam program.") # zastanowic sie czy by tutaj nie dopisac kodu dla
+        sys.exit()
 
 
 def modify_links(links, device):
@@ -112,7 +146,11 @@ def modify_links(links, device):
     siec = IPNetwork(addressing)
     siec_subnets = list(siec.subnet(24))
     for i in range(len(tab)):
-        lista_sieci.append(str(siec_subnets[i]))
+        try:
+            lista_sieci.append(str(siec_subnets[i]))
+        except IndexError:
+            print("Bledna wartosc zmiennej 'addressing'.")
+            sys.exit()
 
     print(lista_sieci)
 
@@ -219,10 +257,11 @@ def device_config(info, config_for_router):
     #net_connect.disconnect()
 
 
-
-id = get_project_id_based_on_name("test")
+name = get_project_name()
+id = get_project_id_based_on_name(name)
 nodes = get_all_nodes_info(id)
 pprint(nodes)
+sprawdz_nazwy_urzadzen(nodes)
 links = (get_all_links_info(id))
 pprint(links)
 tab = modify_links(links, nodes)
