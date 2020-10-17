@@ -115,6 +115,7 @@ def modify_links(links, device):
         lista_sieci.append(str(siec_subnets[i]))
 
     print(lista_sieci)
+
     slownik_do_agregacji_interfacow = {}
     for j in range(len(tab)):
         for line2 in tab[j]:
@@ -122,17 +123,27 @@ def modify_links(links, device):
             interface = line2.split(":")[1]
             ostati_oktet = nazwa[1:]
             adresacja = str(IPNetwork(lista_sieci[j])[ostati_oktet])# + " " + str(IPNetwork(lista_sieci[j]).netmask)
+            network_address = str(IPNetwork(lista_sieci[j]).network)
+            interface_mask = "255.255.255.0"
+            interface_wildcard_mask = "0.0.0.255"
             print(nazwa)
             print(interface)
             print(adresacja)
 
             if nazwa not in slownik_do_agregacji_interfacow.keys():
-                slownik_do_agregacji_interfacow[nazwa] = []
+                slownik_do_agregacji_interfacow[nazwa] = {}
                 address_loopbacka = str(ostati_oktet) + "." + str(ostati_oktet) + "." + str(ostati_oktet) + "." + str(ostati_oktet)  # + " 255.255.255.255"
-                slownik_do_agregacji_interfacow[nazwa].append({"lo0": address_loopbacka})
+                loopback_mask = "255.255.255.255"
+                loppback_wilcard = "0.0.0.0"
+                slownik_do_agregacji_interfacow[nazwa]["lo0"] = {"address": address_loopbacka,
+                                                                 "mask": loopback_mask,
+                                                                 "wildcard_mask": loppback_wilcard,
+                                                                 "network_address": address_loopbacka}
 
-            slownik_do_agregacji_interfacow[nazwa].append({interface: adresacja})
-
+            slownik_do_agregacji_interfacow[nazwa][interface] = {"address": adresacja,
+                                                                 "mask": interface_mask,
+                                                                 "wildcard_mask": interface_wildcard_mask,
+                                                                 "network_address": network_address}
 
     #print(slownik_do_agregacji_interfacow)
 

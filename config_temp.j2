@@ -1,24 +1,14 @@
 configure terminal
 no logging console
-{%- for interface_item in data -%}
-{% for key, value in interface_item.items() %}
-{% if key != "lo0" -%}
-interface {{ key }}
-ip address {{ value }} 255.255.255.0
+{% for interface_name, interface_data in data.items() -%}
+interface {{ interface_name }}
+ip address {{ interface_data.address }} {{ interface_data.mask }}
 no shutdown
 exit
-{%- else -%}
-interface {{ key }}
-ip address {{ value }} 255.255.255.255
-exit
-{% endif %}
-{%- endfor -%}
-{%- endfor %}
+{% endfor %}
 router ospf 1
-{%- for interface_item in data -%}
-{% for key, value in interface_item.items() %}
-network {{ value }} 0.0.0.0 area 0
-{%- endfor -%}
+{%- for interface_data in data.values() %}
+network {{ interface_data.network_address }} {{ interface_data.wildcard_mask }} area 0
 {%- endfor %}
 exit
 logging console
