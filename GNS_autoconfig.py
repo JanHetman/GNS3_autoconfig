@@ -12,7 +12,7 @@ from netmiko import ConnectHandler
 # GLOBAL VARIABLE:
 gns3_server_address = "localhost"
 gns3_server_port = "3080"
-addressing = "10.15.128.0/30"
+addressing = "10.15.128.0/18"
 # GLOBAL VARIABLE END
 
 def get_project_name():
@@ -90,13 +90,15 @@ def sprawdz_nazwy_urzadzen(nodes):
 
     if list_of_nodes == b:
         print("Wymogi spelnione")
+        return True
 
     else:
-        print("Wymogi dla tej wersji projektu nie spelnione. Zamykam program.") # zastanowic sie czy by tutaj nie dopisac kodu dla
-        sys.exit()
+        return False
+        #print("Wymogi dla tej wersji projektu nie spelnione. Zamykam program.") # zastanowic sie czy by tutaj nie dopisac kodu dla
+        #sys.exit()
 
 
-def modify_links(links, device):
+def modify_links(links, device, decyzja):
     tab = []
     for key, value in links.items():
         id_1, id_2 = value["node_1_id"], value["node_2_id"]
@@ -145,7 +147,7 @@ def modify_links(links, device):
     lista_sieci = []
     siec = IPNetwork(addressing)
     siec_subnets = list(siec.subnet(24))
-    for i in range(len(tab)):
+    for i in range(len(tab)): # a moze to enumerate?
         try:
             lista_sieci.append(str(siec_subnets[i]))
         except IndexError:
@@ -154,12 +156,22 @@ def modify_links(links, device):
 
     print(lista_sieci)
 
+
+    if decyzja == False:
+        slownik_translacji_dla_nazw_innych_niz_standard = {}
+        for count, value in enumerate(device.values(), 1):
+            value['number'] = count
+            print(count)
+            slownik_translacji_dla_nazw_innych_niz_standard[value['name']] = count
+
+        pprint(slownik_translacji_dla_nazw_innych_niz_standard)
+
     slownik_do_agregacji_interfacow = {}
     for j in range(len(tab)):
         for line2 in tab[j]:
             nazwa = line2.split(":")[0]
             interface = line2.split(":")[1]
-            ostati_oktet = nazwa[1:]
+            ostati_oktet = nazwa[1:] if decyzja is True else slownik_translacji_dla_nazw_innych_niz_standard[nazwa]
             adresacja = str(IPNetwork(lista_sieci[j])[ostati_oktet])# + " " + str(IPNetwork(lista_sieci[j]).netmask)
             network_address = str(IPNetwork(lista_sieci[j]).network)
             interface_mask = "255.255.255.0"
@@ -261,10 +273,10 @@ name = get_project_name()
 id = get_project_id_based_on_name(name)
 nodes = get_all_nodes_info(id)
 pprint(nodes)
-sprawdz_nazwy_urzadzen(nodes)
+decyzja = sprawdz_nazwy_urzadzen(nodes)
 links = (get_all_links_info(id))
 pprint(links)
-tab = modify_links(links, nodes)
+tab = modify_links(links, nodes, decyzja)
 pprint(tab)
 konfig = generete_config_from_template(tab)
 pprint(konfig)
