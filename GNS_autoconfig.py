@@ -51,13 +51,20 @@ def get_all_nodes_info(project_id):
 
     try:
         for single_node in response.json():
+            os = single_node.get('properties', None).get('image', None)
             devices_dict[single_node["node_id"]] = {"name": single_node["name"],
                                                     "console_ip": single_node["console_host"],
                                                     "id": single_node["node_id"],
                                                     "console_port": single_node["console"],
-                                                    "device_type": single_node["node_type"]}
+                                                    "device_type": single_node["node_type"],
+                                                    "os": os}
+
+
+            #devices_dict[single_node["node_id"]]
+
+
     except KeyError:
-        print("Projekt nie otwarty")
+        print("Projekt nie otwarty lub niestandardowe parametry urzadzen")
         sys.exit()
 
     return devices_dict
@@ -202,12 +209,26 @@ def modify_links(links, device, decyzja):
     return slownik_do_agregacji_interfacow
 
 
-def generete_config_from_template(dane):
+def generete_config_from_template(dane, devices):
     RENDER = Environment(loader=FileSystemLoader('.'))  # tu podajemy sciezke do templatow '.'
-    template = RENDER.get_template('config_temp.j2')
+
+    slownik_do_sprawdzania_templatow = {}
+    for device_data in devices.values():
+        slownik_do_sprawdzania_templatow[device_data['name']] = device_data['os']
+
+    print(slownik_do_sprawdzania_templatow)
+
     konfiguracja_do_dodania = {}
     for key, value in dane.items():
         #print(key)
+        if False:
+            pass
+        elif False:
+            pass
+        else:
+            template = RENDER.get_template('config_temp.j2')
+
+        #template = RENDER.get_template('config_temp.j2')
         generacja_templatu_dla_pojedynczego_urzadzenia = template.render(data = value)
         #print(generacja_templatu_dla_pojedynczego_urzadzenia)
         konfiguracja_do_dodania[key] = generacja_templatu_dla_pojedynczego_urzadzenia
@@ -278,7 +299,7 @@ links = (get_all_links_info(id))
 pprint(links)
 tab = modify_links(links, nodes, decyzja)
 pprint(tab)
-konfig = generete_config_from_template(tab)
+konfig = generete_config_from_template(tab, nodes)
 pprint(konfig)
 start_all_nodes(nodes, id)
 create_threads_for_device_config(nodes, konfig)
