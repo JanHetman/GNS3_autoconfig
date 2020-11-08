@@ -211,6 +211,7 @@ def start_all_nodes(nodes, project_id):
     for node_id in nodes:
         url = "http://" + GNS3_SERVER_ADDRESS + ":" + GNS3_SERVER_PORT + "/v2/projects/" + project_id + "/nodes/" + node_id + "/start"
         response = requests.request("POST", url)
+
         if '200' in response.text:
             print("Urządzenie {0} włączone, proszę czekać".format(nodes[node_id]['name']))
 
