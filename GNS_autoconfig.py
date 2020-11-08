@@ -15,7 +15,7 @@ from netmiko import ConnectHandler
 # GLOBAL VARIABLE:
 GNS3_SERVER_ADDRESS = "localhost"
 GNS3_SERVER_PORT = "3080"
-ADDRESSING = "10.15.128.0/18"
+ADDRESSING = "192.168.0.0/16"
 
 
 def get_project_name():
@@ -84,11 +84,11 @@ def check_naming_convention(nodes):
     for single_node in nodes.values():
         list_of_nodes.append(single_node['name'] + ":" + single_node['device_type'])
 
-    nodes_verificarion = [x for x in list_of_nodes if
+    nodes_verification = [x for x in list_of_nodes if
          ((len(x.split(':')[0]) <= 4 and x.split(':')[0][1:].isdigit() and 0 < int(x.split(':')[0][1:]) < 224) or "ethernet" in x.split(':')[1])]
 
-    if list_of_nodes == nodes_verificarion:
-        print("Wymogi spelnione")
+    if list_of_nodes == nodes_verification:
+        print("Wymogi nazewnictwa spelnione")
         return True
     else:
         return False
@@ -101,6 +101,11 @@ def modify_links(links, nodes, decision):
         id_1, id_2 = value["node_1_id"], value["node_2_id"]
         name_1, name_2 = nodes[id_1]["name"], nodes[id_2]["name"]
         port_1, port_2 = value["node_1_port"], value["node_2_port"]
+
+        if not(port_1.lower().islower() and port_1.lower().islower()):
+            print("Bląd w nazewnictwie interfacow w GNSie")
+            sys.exit(1)
+
         node_1 = name_1 + ":" + port_1 if "switch" not in nodes[id_1]['device_type'] else name_1
         node_2 = name_2 + ":" + port_2 if "switch" not in nodes[id_2]['device_type'] else name_2
         connection_tab.append([node_1, node_2])
@@ -235,7 +240,7 @@ def device_config(node_info, config_for_router):
 
     device = {
         'device_type': 'cisco_ios_telnet',
-        'ip': node_info["console_ip"],
+        'ip': node_info["console_ip"] if node_info["console_ip"] != '0.0.0.0' else GNS3_SERVER_ADDRESS,
         'port': node_info["console_port"],
     }
 
