@@ -15,7 +15,7 @@ from netmiko import ConnectHandler
 # GLOBAL VARIABLE:
 GNS3_SERVER_ADDRESS = "localhost"
 GNS3_SERVER_PORT = "3080"
-ADDRESSING = "192.168.0.0/16"
+ADDRESS_POOL = "192.168.0.0/16"
 
 
 def get_project_name():
@@ -123,13 +123,14 @@ def modify_links(links, nodes, decision):
             elif single_switch in single_link:
                 link_with_switch += single_link
                 del link_with_switch[link_with_switch.index(single_switch)]
+                link_with_switch = list(set(link_with_switch))
 
         final_connection_table.append(link_with_switch)
         connection_tab = final_connection_table
         # print(connection_tab)
 
     list_of_networks_using_in_topology = []
-    address_pool = IPNetwork(ADDRESSING)
+    address_pool = IPNetwork(ADDRESS_POOL)
     list_of_all_networks_in_address_pool = list(address_pool.subnet(24))
 
     for index_for_single_link in range(len(connection_tab)):
