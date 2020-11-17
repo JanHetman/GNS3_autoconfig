@@ -139,7 +139,7 @@ def modify_links(links, nodes, decision):
         try:
             list_of_networks_using_in_topology.append(str(list_of_all_networks_in_address_pool[index_for_single_link]))
         except IndexError:
-            print("Bledna wartosc zmiennej 'ADDRESSING'.")
+            print("Bledna wartosc zmiennej 'ADDRESS_POOL'.")
             sys.exit(1)
 
     # print(list_of_networks_using_in_topology)
