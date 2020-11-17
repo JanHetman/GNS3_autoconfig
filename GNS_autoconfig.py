@@ -5,8 +5,6 @@ import threading
 import time
 import requests
 import json
-import logging
-import paramiko
 
 from pprint import pprint
 from jinja2 import Environment, FileSystemLoader
@@ -248,27 +246,20 @@ def device_config(node_info, config_for_router):
         'port': node_info["console_port"],
     }
 
-    logging.disable(logging.CRITICAL)
-
     while True:
         try:
             net_connect = ConnectHandler(**device)
-            net_connect.send_command("\n\n\n\n")
-            print("Trwa konfiguracja {0}".format(node_info['name']))
-
-            for line_of_config in config_for_router.splitlines():
-                net_connect.send_command(line_of_config, expect_string=r'#')
-
-            print("Konfiguracja {0} zakonczona".format(node_info['name']))
             break
-        except paramiko.ssh_exception.SSHException:
-            print("Blad polaczenia z {0}. Sprawdz kompatybilnosc urzadzenia z device_type przekazanym do ConnectHandlera".format(node_info['name']))
-            sys.exit(1)
-        except ValueError:
-            print("Blad polaczenia z {0}. Sprawdz wartość device_type przekazane do ConnectHandlera".format(node_info['name']))
-            sys.exit(1)
         except:
             pass
+
+    net_connect.send_command("\n\n\n\n")
+    print("Trwa konfiguracja " + node_info['name'])
+
+    for line_of_config in config_for_router.splitlines():
+        net_connect.send_command(line_of_config, expect_string=r'#')
+
+    print("Konfiguracja " + node_info['name'] + " zakonczona")
 
 
 if __name__ == '__main__':
