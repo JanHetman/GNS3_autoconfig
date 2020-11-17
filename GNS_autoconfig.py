@@ -243,7 +243,7 @@ def device_config(node_info, config_for_router):
     # .
 
     device = {
-        'device_type': 'cisco_ios_telnets',
+        'device_type': 'cisco_ios_telnet',
         'ip': node_info["console_ip"] if node_info["console_ip"] != '0.0.0.0' else GNS3_SERVER_ADDRESS,
         'port': node_info["console_port"],
     }
