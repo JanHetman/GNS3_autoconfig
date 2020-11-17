@@ -243,7 +243,7 @@ def device_config(node_info, config_for_router):
     # .
 
     device = {
-        'device_type': 'cisco_ios_telnet',
+        'device_type': 'cisco_ios_telnets',
         'ip': node_info["console_ip"] if node_info["console_ip"] != '0.0.0.0' else GNS3_SERVER_ADDRESS,
         'port': node_info["console_port"],
     }
@@ -263,6 +263,9 @@ def device_config(node_info, config_for_router):
             break
         except paramiko.ssh_exception.SSHException:
             print("Blad polaczenia z {0}. Sprawdz kompatybilnosc urzadzenia z device_type przekazanym do ConnectHandlera".format(node_info['name']))
+            sys.exit(1)
+        except ValueError:
+            print("Blad polaczenia z {0}. Sprawdz wartość device_type przekazane do ConnectHandlera".format(node_info['name']))
             sys.exit(1)
         except:
             pass
