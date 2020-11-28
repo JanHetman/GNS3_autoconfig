@@ -30,15 +30,17 @@ def get_project_id_based_on_name(project_name):
 
     try:
         response = requests.request("GET", url)
+        for single_project in response.json():
+            if project_name == single_project["name"]:
+                return single_project["project_id"]
+        else:
+            print("Nie ma takiego projektu")
+            sys.exit(1)
     except requests.exceptions.ConnectionError:
         print("Brak odpowiedzi od serwera GNS3.")
         sys.exit(1)
-
-    for single_project in response.json():
-        if project_name == single_project["name"]:
-            return single_project["project_id"]
-    else:
-        print("Nie ma takiego projektu")
+    except json.decoder.JSONDecodeError:
+        print("Włączone uwierzytelnianie na serwerze GNS3 - wyłącz uwierzytelnianie")
         sys.exit(1)
 
 
